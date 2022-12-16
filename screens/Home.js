@@ -1,13 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Image, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronDownIcon, UserIcon, AdjustmentsVerticalIcon, MagnifyingGlassIcon } from "react-native-heroicons/outline"
 import Categories from './components/Categories';
 import FeaturedRow from './components/FeaturedRow';
+import sanityClient from '../sanity';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
+    const [featuredCategories, setFeaturedCategories] = useState([])
+
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -15,9 +18,20 @@ const HomeScreen = () => {
         })
     }, [])
 
+    useEffect(() => {
+        sanityClient.fetch(`*[_type == "featured"] {
+            ...,
+            restaurants[]->{
+                ...,
+                dishes[]->
+            }
+            }`).then(data => {
+            setFeaturedCategories(data);
+        })
+    }, [])
+
     return (
         <SafeAreaView className="bg-white pt-5">
-
 
             {/* Header */}
             <View className="flex-row pb-3 items-center mx-4 space-x-2">
@@ -32,8 +46,6 @@ const HomeScreen = () => {
                 <UserIcon size={35} color="#00CCBB" />
             </View>
 
-
-
             {/* Search */}
             <View className="flex-row items-center space-x-2 pb-2 mx-4">
                 <View className="flex-row flex-1 space-x-2 bg-gray-200 p-3">
@@ -47,18 +59,23 @@ const HomeScreen = () => {
 
             {/* Body */}
             <ScrollView className="bg-gray-100"
-                contentContainerStyle={{}}
+                contentContainerStyle={{ paddingBottom: 100 }}
             >
                 {/* Categories */}
                 <Categories />
-                {/* Featured Rows */}
-                <FeaturedRow id='123' title="Featured Row 1" desc="Paid placements from our partners" />
-                {/* Tasty Discounts */}
-                <FeaturedRow id='1234' title="Featured Row 2" desc="Everyone's been enjoying these juicy discountss" />
-                {/*  Offers near rryou */}
-                <FeaturedRow id='1235' title="Featured Row 3" desc="Why not support your local restaurant tonight" />
-            </ScrollView>
 
+
+                {/* Featured Rows */}
+                {featuredCategories?.map((category) => (
+
+                    <FeaturedRow
+                        key={category._id}
+                        id={category._id}
+                        title={category.name}
+                        desc={category.short_description} />
+                ))}
+
+            </ScrollView>
         </SafeAreaView>
     )
 
